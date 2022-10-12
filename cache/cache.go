@@ -6,16 +6,16 @@ import (
 	"time"
 )
 
-func ExpensiveFibonacci(n int) int {
-	fmt.Printf("Calculate expensive fibonacci for %d\n", n)
-	time.Sleep(5 * time.Second)
-	return n
-}
-
 type Service struct {
 	InProgress map[int]bool
 	IsPending  map[int][]chan int
 	Lock       sync.RWMutex
+}
+
+func ExpensiveFibonacci(n int) int {
+	fmt.Printf("Calculate Expensive Fibonacci for %d\n", n)
+	time.Sleep(5 * time.Second)
+	return n
 }
 
 func (s *Service) Work(job int) {
@@ -29,9 +29,10 @@ func (s *Service) Work(job int) {
 		s.Lock.Lock()
 		s.IsPending[job] = append(s.IsPending[job], response)
 		s.Lock.Unlock()
-		fmt.Printf("Waiting for response job: %d\n", job)
+		fmt.Printf("Waiting for Response job: %d\n", job)
 		resp := <-response
-		fmt.Printf("Response received %d\n", resp)
+		fmt.Printf("Response Done, received %d\n", resp)
+		return
 	}
 	s.Lock.RUnlock()
 
@@ -39,7 +40,7 @@ func (s *Service) Work(job int) {
 	s.InProgress[job] = true
 	s.Lock.Unlock()
 
-	fmt.Printf("Calculate fibonacci for %d\n", job)
+	fmt.Printf("Calculate Fibonacci for %d\n", job)
 	result := ExpensiveFibonacci(job)
 
 	s.Lock.RLock()
@@ -50,9 +51,8 @@ func (s *Service) Work(job int) {
 		for _, pendingWorker := range pendingWorkers {
 			pendingWorker <- result
 		}
-		fmt.Printf("Result sent - all pending workers ready job %d\n", job)
+		fmt.Printf("Result sent - all pending workers ready job:%d\n", job)
 	}
-
 	s.Lock.Lock()
 	s.InProgress[job] = false
 	s.IsPending[job] = make([]chan int, 0)
